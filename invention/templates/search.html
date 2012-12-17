@@ -1,0 +1,8 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<h1>Search Results</h1>
+{% for item in items %}
+<div><a href="{{ item.get_absolute_url }}">{{ item.name }}</a></div>
+{% endfor %}
+{% endblock %}

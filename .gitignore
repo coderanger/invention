@@ -1,0 +1,4 @@
+*.pyc
+.secret_key
+eve.db
+

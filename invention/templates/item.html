@@ -1,0 +1,86 @@
+{% extends 'layout.html' %}
+{% load percformat json %}
+
+{% block content %}
+<h1>{{ item.name }}</h1>
+<div id="app"></div>
+<script id="invention-chance-template" type="application/x-underscore">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Base Invention Chance</th>
+        <th><%= encryptionSkill.get('name') %></th>
+        <th><%= coreSkill1.get('name') %></th>
+        <th><%= coreSkill2.get('name') %></th>
+        <% if(metas.length > 0) { %><th>Base Item</th><% } %>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><%= percent(baseInventionChance) %></td>
+        <td id="encryptionSkillLevel"></td>
+        <td id="coreSkillLevel1"></td>
+        <td id="coreSkillLevel2"></td>
+        <% if(metas.length > 0) { %><td id="metas">
+          <select>
+            <option value="0">None</option>
+            <% metasItems.forEach(function(m) { %>
+            <option value="<%= m.get('meta_level') %>"><%= m.get('meta_level') %> - <%= m.get('name') %></option>
+            <% }) %>
+          </select>
+        </td><% } %>
+      </tr>
+    </tbody>
+  </table>
+</script>
+<script id="materials-template" type="application/x-underscore">
+  <div class="span6">
+    <table class="table">
+      <caption>Invention Materials</caption>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>#</th>
+          <th>Price</th>
+          <th>Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% requirements.forEach(function(req) { if(req.get('item')) { %>
+        <tr>
+          <td><%= req.get('item').get('name') %></td>
+          <td><%= req.get('count') %></td>
+          <td><%= price(req.get('price')) %></td>
+          <td><%= price(req.get('subtotal')) %></td>
+        </tr>
+        <% }}) %>
+        <tr>
+          <td colspan="3">Total:</td>
+          <td><%= price(requirements.total) %></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</script>
+<script id="invention-overview-template" type="application/x-underscore">
+  <dl class="span6">
+    <dt>Invention Chance:</dt>
+    <dd><%= percent(inventionChance) %></dd>
+    <dt>Cost Per Invention:</dt>
+    <dd><%= price(total / inventionChance) %></dd>
+  </dl>
+</script>
+{% endblock %}
+
+{% block footer_js %}
+<script type="text/javascript" src="{{ STATIC_URL }}js/lodash{% if debug %}.min{% endif %}.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/backbone{% if debug %}.min{% endif %}.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/backbone.layoutmanager.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/item.js"></script>
+<script type="text/javascript">
+$(function() {
+  var invention = new models.Invention({{ invention_data|jsonify }});
+  window.app = new views.Application({model: invention, el: $('#app')}).render().view;
+});
+</script>
+{% endblock %}
