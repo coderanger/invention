@@ -228,17 +228,20 @@ class BlueprintRequirement(models.Model):
     def skill(self):
         return self.skill_map[self.item_id]
 
-    def to_dict(self):
+    def to_dict(self, item=None):
         damage = self.damage_per_job
         # Override the damage to data interfaces
         if self.skill and 'Encryption Methods' in self.skill:
             damage = 0
-        return {
+        data = {
             'item_id': self.item_id,
             'quantity': self.quantity,
             'damage_per_job': damage,
             'skill': self.skill,
         }
+        if item:
+            data['item'] = item
+        return data
 
 class Material(models.Model):
     """

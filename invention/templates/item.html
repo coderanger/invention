@@ -24,7 +24,7 @@
         <% if(metas.length > 0) { %><td id="metas">
           <select>
             <option value="0">None</option>
-            <% metasItems.forEach(function(m) { %>
+            <% metas.forEach(function(m) { %>
             <option value="<%= m.get('meta_level') %>"><%= m.get('meta_level') %> - <%= m.get('name') %></option>
             <% }) %>
           </select>
