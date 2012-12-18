@@ -49,17 +49,22 @@ models.Invention = Backbone.Model.extend({
     this.set('coreSkill1', new models.Skill({name: this.get('coreSkill1')}).on('change', function() { this.trigger('change change:coreSkill1'); }, this));
     this.set('coreSkill2', new models.Skill({name: this.get('coreSkill2')}).on('change', function() { this.trigger('change change:coreSkill2'); }, this));
 
-    this.on('change:encryptionSkill change:coreSkill1 change:coreSkill2 change:metaLevel change:decryptorChance', this.calculateInventionChance, this);
+    this.on('change:encryptionSkill change:coreSkill1 change:coreSkill2 change:metaLevel change:decryptor', this.calculateInventionChance, this);
     this.calculateInventionChance();
 
-    this.set('metas', new Backbone.Collection(this.get('metas'), {comparator: 'meta_level'}));
-    this.set('requirements', new collections.Requirements(this.get('requirements'), {}).on('change:total', function() { this.trigger('change change:requirements'); }, this));
+    this.on('all', function() { console.log(arguments); });
+
+    this.set({
+      metas: new Backbone.Collection(this.get('metas'), {model: models.Item, comparator: 'meta_level'}),
+      requirements: new collections.Requirements(this.get('requirements'), {}).on('change:total', function() { this.trigger('change change:requirements'); }, this),
+      decryptors: new Backbone.Collection(this.get('decryptors'), {model: models.Item})
+    });
   },
   defaults: function() {
     return {
       baseInventionChance: 0,
       metaLevel: 0,
-      decryptorChance: 1,
+      decryptor: 0,
       inventionChance: 0,
     }
   },
@@ -69,10 +74,18 @@ models.Invention = Backbone.Model.extend({
         Datacore_1_Skill_Level = +this.get('coreSkill1').get('level'),
         Datacore_2_Skill_Level = +this.get('coreSkill2').get('level'),
         Meta_Level = +this.get('metaLevel'),
-        Decryptor_Modifier = +this.get('decryptorChance');
+        Decryptor_Modifier = this.decryptorData[this.get('decryptor')].chance;
     var Invention_Chance = Base_Chance * (1 + (0.01 * Encryption_Skill_Level)) * (1 + ((Datacore_1_Skill_Level + Datacore_2_Skill_Level) * (0.1 / (5 - Meta_Level)))) * Decryptor_Modifier;
     this.set('inventionChance', Invention_Chance);
-  }
+  },
+  decryptorData: [
+    {chance: 1.0, runs: 0, me:  0, pe: 0},
+    {chance: 0.6, runs: 9, me: -2, pe: 1},
+    {chance: 1.0, runs: 2, me:  1, pe: 4},
+    {chance: 1.1, runs: 0, me:  2, pe: 3},
+    {chance: 1.2, runs: 1, me:  3, pe: 5},
+    {chance: 1.8, runs: 4, me: -1, pe: 2}
+  ]
 });
 
 var collections = {};
@@ -111,7 +124,8 @@ views.SkillLevel = Backbone.LayoutView.extend({
 views.InventionChance = Backbone.LayoutView.extend({
   template: '#invention-chance-template',
   events: {
-    'change #metas select': 'updateMeta'
+    'change #metas select': 'updateMeta',
+    'click .btn-decryptor': 'updateDecryptor'
   },
   initialize: function() {
     this.setViews({
@@ -119,16 +133,20 @@ views.InventionChance = Backbone.LayoutView.extend({
       '#coreSkillLevel1': new views.SkillLevel({model: this.model.get('coreSkill1')}),
       '#coreSkillLevel2': new views.SkillLevel({model: this.model.get('coreSkill2')}),
     });
-    this.model.on('change', this.render, this);
+    this.model.on('change change:decryptor', this.render, this);
   },
   data: function() {
-    return this.model.attributes;
+    return _.extend(this.model.attributes, {decryptorData: this.model.decryptorData});
   },
   afterRender: function() {
     this.$('#metas select').val(this.model.get('metaLevel'));
+    this.$('.btn-decryptor').removeClass('btn-primary').eq(this.model.get('decryptor')).addClass('btn-primary');
   },
   updateMeta: function(evt) {
     this.model.set('metaLevel', $(evt.target).val());
+  },
+  updateDecryptor: function(evt) {
+    this.model.set('decryptor', $(evt.target).data('n'));
   }
 });
 

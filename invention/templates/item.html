@@ -32,6 +32,28 @@
       </tr>
     </tbody>
   </table>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Decryptor</th>
+        <th>Chance Multiplier</th>
+        <th>Extra Runs</th>
+        <th>ME Modifier</th>
+        <th>PE Modifier</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% _.forEach([0, 1, 2, 3, 4, 5], function(n) { %>
+      <tr>
+        <td><button class="btn btn-decryptor" data-n="<%= n %>"><%= n==0 ? 'None' : decryptors.at(n-1).get('name') %></button></td>
+        <td><%= decryptorData[n].chance %></td>
+        <td><%= decryptorData[n].runs %></td>
+        <td><%= decryptorData[n].me %></td>
+        <td><%= decryptorData[n].pe %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
 </script>
 <script id="materials-template" type="application/x-underscore">
   <div class="span6">
