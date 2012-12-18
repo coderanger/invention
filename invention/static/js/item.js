@@ -52,13 +52,13 @@ models.Invention = Backbone.Model.extend({
     this.on('change:encryptionSkill change:coreSkill1 change:coreSkill2 change:metaLevel change:decryptor', this.calculateInventionChance, this);
     this.calculateInventionChance();
 
-    this.on('all', function() { console.log(arguments); });
-
     this.set({
       metas: new Backbone.Collection(this.get('metas'), {model: models.Item, comparator: 'meta_level'}),
       requirements: new collections.Requirements(this.get('requirements'), {}).on('change:total', function() { this.trigger('change change:requirements'); }, this),
       decryptors: new Backbone.Collection(this.get('decryptors'), {model: models.Item})
     });
+    this.on('change:requirements change:metaLevel change:decryptor', this.calculateRequirements, this);
+    this.calculateRequirements();
   },
   defaults: function() {
     return {
@@ -77,6 +77,20 @@ models.Invention = Backbone.Model.extend({
         Decryptor_Modifier = this.decryptorData[this.get('decryptor')].chance;
     var Invention_Chance = Base_Chance * (1 + (0.01 * Encryption_Skill_Level)) * (1 + ((Datacore_1_Skill_Level + Datacore_2_Skill_Level) * (0.1 / (5 - Meta_Level)))) * Decryptor_Modifier;
     this.set('inventionChance', Invention_Chance);
+  },
+  calculateRequirements: function() {
+    var metaLevel = this.get('metaLevel');
+    var reqs = new collections.Requirements(this.get('requirements').models, {});
+    if(metaLevel != '0') {
+      var metaItem = this.get('metas').find(function(item) { return item.get('meta_level') == metaLevel; });
+      reqs.add({item_id: metaItem.id, quantity: 1, item: metaItem.attributes});
+    }
+    var decryptor = this.get('decryptor');
+    if(decryptor != '0') {
+      var decryptorItem = this.get('decryptors').at(decryptor - 1);
+      reqs.add({item_id: decryptorItem.id, quantity: 1, item: decryptorItem.attributes});
+    }
+    this.set('fullRequirements', reqs);
   },
   decryptorData: [
     {chance: 1.0, runs: 0, me:  0, pe: 0},
@@ -153,16 +167,10 @@ views.InventionChance = Backbone.LayoutView.extend({
 views.Materials = Backbone.LayoutView.extend({
   template: '#materials-template',
   initialize: function() {
-    this.model.on('change:requirements change:metaLevel', this.render, this);
+    this.model.on('change:requirements change:metaLevel change:decryptor', this.render, this);
   },
   data: function() {
-    var metaLevel = this.model.get('metaLevel'), originalReqs = this.model.get('requirements');
-    var reqs = new collections.Requirements(originalReqs.models, {});
-    if(metaLevel != '0') {
-      var metaItem = this.model.get('metas').find(function(item) { return item.get('meta_level') == metaLevel; });
-      reqs.add({item_id: metaItem.id, quantity: 1, item: metaItem.attributes});
-    }
-    return {requirements: reqs};
+    return {requirements: this.model.get('fullRequirements')};
   }
 });
 
